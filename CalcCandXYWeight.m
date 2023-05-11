@@ -1,0 +1,8 @@
+function CalcCandXYWeight(obj)
+
+
+
+
+
+
+end
