@@ -1,0 +1,39 @@
+theta_range: [-1.00000 1.00000]
+theta_sample_step: 0.05000
+disparity_sample_step: 0.10000
+reproj_sample_step: 0.00100
+===================================
+disparity_sample_interval: 0.01000
+reproj_sample_interval: 0.01000
+===================================
+disparity_sigma: 1.00000
+disparity_beta: 10.00000
+reproj_sigma: 0.80000
+reproj_beta: 10.00000
+reproj_sigma_right: 1.50000
+reproj_beta_right: 10.00000
+===================================
+feat2check:
+1039
+1221
+1102
+1077
+605
+886
+426
+385
+712
+1072
+===================================
+switchDepth: 0
+USEGOLDENDISP: 0
+===================================
+USERIGHT: 0
+USELEFT: 0
+USELEFTXRIGHT: 1
+USELEFTPLUSRIGHT: 0
+===================================
+USERIGHT2: 0
+USELEFT2: 1
+USELEFTXRIGHT2: 0
+USELEFTPLUSRIGHT2: 0

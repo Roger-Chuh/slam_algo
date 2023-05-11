@@ -1,0 +1,13 @@
+num2Check: 2
+row: 9
+col: 14
+len: 81
+eyeH: 1060
+zDist: 2000
+zStep: 500
+firstCorner2Gnd: 1160
+yThresholdY: 100
+zThreshold: 150
+rectThreshold: 1
+cbLenThr: 10
+angThreshold: 15
