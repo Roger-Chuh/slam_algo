@@ -1,7 +1,7 @@
 function testDirestAlignFullMultiIntr()
 % function testDirestAlignFullMultiIntr(k2c_comp, LR, Depth, intrMat)
 global point_id  block  point_id_offset imgs depths Tcws abs last_point_id est_affine est_depth Depth_change use_half inverse_comp  Depth_meas ...
-    depth_noise switch_jac use_weight compensate_ab pose_noise pyr_level do_log est_intr IntrMatList fix_pose use_DT;
+    depth_noise switch_jac use_weight compensate_ab pose_noise pyr_level do_log est_intr IntrMatList fix_pose use_DT use_ZNCC mixed_comp;
 
 % clear;
 
@@ -134,7 +134,7 @@ end
     
 depth_noise = -100; -500; 100; -100;-100; 0;
 use_DT = false;true; false; true;
-
+use_ZNCC = true; false; true;
 if 0
     pose_noise = false;true;false;true;
     fix_pose = true; false; true;
@@ -148,9 +148,14 @@ else
     inverse_comp = true; false; true; false; true; false; true; false; true; false; true; false; true;
     est_depth =  1;0;1;0;1;0;1; 0;1;
 end
-
+mixed_comp = false;
 switch_jac = false;true; false;
-est_affine = 1; 0;1;1;0;1;
+est_affine = 1; 0; 1; 0;1;1;0;1;
+
+if use_ZNCC
+    est_affine = 0;
+end
+
 use_weight = 0;
 compensate_ab = 0;1; 0; 1; 0;
 
@@ -185,7 +190,7 @@ end
 function OptimizeFlowFull()
 % function OptimizeFlowFull(IntrMatList)
 global point_id  block point_id_offset Depth_meas imgs depths Tcws abs last_point_id est_affine est_depth Depth_change use_half iter inverse_comp depth_noise ab_stack ...
-    switch_jac use_weight compensate_ab pose_noise pyr_level do_log est_intr IntrMatList fix_pose use_DT;
+    switch_jac use_weight compensate_ab pose_noise pyr_level do_log est_intr IntrMatList fix_pose use_DT use_ZNCC mixed_comp;
 % Depth_meas = cell(length(imgs)-1, length(imgs));
 
 Depth_meas_check = Depth_meas;
@@ -236,7 +241,7 @@ if 0
     err_pose{28,1}= [rodrigues([0.001 0.001 -0.001]) [2 -1 -5]'; 0 0 0 1];
     err_pose{29,1}= [rodrigues([0.001 -0.001 0.001]) [-1 -2 -2]'; 0 0 0 1];
     err_pose{30,1}= [rodrigues([0.001 -0.001 0.001]) [-1 2 2]'; 0 0 0 1];
-elseif 1
+elseif 0
     err_pose{2,1}= [rodrigues([-0.001 0.002 0.001]) [6 8 0]'; 0 0 0 1];
     err_pose{3,1}= [rodrigues([0.002 -0.001 0.004]) [2 5 -2]'; 0 0 0 1];
     err_pose{4,1}= [rodrigues([0.002 0.004 -0.001]) [2 2 -5]'; 0 0 0 1];
@@ -727,7 +732,7 @@ for (lvl = 1 : pyr_level)
 end
 end
 function Solve()
-global block est_affine est_depth Tcws est_intr fix_pose;
+global block est_affine est_depth Tcws est_intr fix_pose use_ZNCC;
 blk = block;
 % blk.Hmm = diag(blk.Hmm);
 % blk.Hmm_inv = inv(blk.Hmm);
@@ -766,7 +771,12 @@ else
     schur.Hpp = blk.Hpp;
     schur.bp = blk.bp;
 end
-large = 5e14;
+
+if use_ZNCC
+    large = 1e10; 5e14;
+else
+    large = 5e14;
+end
 medium =  1e5; 1; 1e5;1e6;1e5;1e4; 1e6; 1e8;100; 10000; 1e4;1;100; 1;1e4; 10;1e2;1;1e2;1e2;1e4;
 small =  100; 1; 100; 1e4;
 intr_weight = 500; 5000; 50000; 50000; 10000; 1000; 500; 200; 500; 1000;
@@ -814,8 +824,9 @@ if est_affine
             schur.Hpp = FillMatrix(schur.Hpp, 6, 6, pi, pi,large.*eye(6));
         end
     end
+    assert((ai+1) == size(schur.Hpp,2));
 end
-assert((ai+1) == size(schur.Hpp,2));
+% assert((ai+1) == size(schur.Hpp,2));
 if(~est_intr)
     schur.Hpp = schur.Hpp(9:end, 9:end);
     schur.bp = schur.bp(9:end);
@@ -1029,7 +1040,7 @@ end
 
 function [depth_meas, reproj_error] = Adjust(pyr_lvl, frame_i, frame_j , host_img, host_depth,host_depth_gt, target_img, target_depth, target_depth_gt,Twh, Twt,Twh_gt, Twt_gt, alpha_h, beta_h, alpha_t, beta_t, intrMat_host, intrMat_target, host_intr_id, target_intr_id, intrMat_host_gt, intrMat_target_gt)
 global point_id block point_id_offset Depth_meas last_point_id est_affine est_depth use_half iter inverse_comp switch_jac ...
-    use_weight compensate_ab pyr_level est_intr;
+    use_weight compensate_ab pyr_level est_intr use_ZNCC mixed_comp;
 
 % inverse_comp = true; false; true;  false; true; true; false;
 
@@ -1354,6 +1365,47 @@ for i = 1 : size(pt_host,1)
             patch2_comp = e_a0ma1 * (warped_intensities - beta_t);
             rs = (host_img(ind) - beta_h) - patch2_comp;
         end
+        if use_ZNCC
+            host_patch = host_img(ind);
+            target_patch = warped_intensities;
+            host_patch_sub_mean = host_patch - mean(host_patch);
+            target_patch_sub_mean = target_patch - mean(target_patch);
+            host_patch_sub_mean_normalized = host_patch_sub_mean./norm(host_patch_sub_mean);
+            target_patch_sub_mean_normalized = target_patch_sub_mean./norm(target_patch_sub_mean);
+            if ~switch_jac
+                rs = 255./255.*(target_patch_sub_mean_normalized - host_patch_sub_mean_normalized);
+%                 rs = -255./255.*(target_patch_sub_mean_normalized - host_patch_sub_mean_normalized);
+                 
+                 if (mixed_comp)   
+                     inverse_comp_ = ~inverse_comp;
+                 else
+                     inverse_comp_ = inverse_comp;
+                 end
+
+                if inverse_comp_
+                    d_err_d_host_patch_sub_mean = ((eye(length(host_patch_sub_mean))/norm(host_patch_sub_mean)) - (host_patch_sub_mean*host_patch_sub_mean').*(norm(host_patch_sub_mean)).^-3);
+                    d_host_patch_sub_mean_d_host_patch = eye(length(host_patch)) - ones(length(host_patch),length(host_patch))./length(host_patch);
+                    d_err_d_host_patch = d_err_d_host_patch_sub_mean * d_host_patch_sub_mean_d_host_patch;
+                else
+                    d_err_d_target_patch_sub_mean = ((eye(length(target_patch_sub_mean))/norm(target_patch_sub_mean)) - (target_patch_sub_mean*target_patch_sub_mean').*(norm(target_patch_sub_mean)).^-3);
+                    d_target_patch_sub_mean_d_target_patch = eye(length(target_patch)) - ones(length(target_patch),length(target_patch))./length(target_patch);
+                    d_err_d_target_patch = d_err_d_target_patch_sub_mean * d_target_patch_sub_mean_d_target_patch;
+                    d_err_d_host_patch = d_err_d_target_patch;
+                end
+            else
+                rs = 1.*(host_patch_sub_mean_normalized - target_patch_sub_mean_normalized);
+                if inverse_comp
+                    d_err_d_host_patch_sub_mean = ((eye(length(host_patch_sub_mean))/norm(host_patch_sub_mean)) - (host_patch_sub_mean*host_patch_sub_mean').*(norm(host_patch_sub_mean)).^-3);
+                    d_host_patch_sub_mean_d_host_patch = eye(length(host_patch)) - ones(length(host_patch),length(host_patch))./length(host_patch);
+                    d_err_d_host_patch = d_err_d_host_patch_sub_mean * d_host_patch_sub_mean_d_host_patch;
+                else
+                    d_err_d_target_patch_sub_mean = -((eye(length(target_patch_sub_mean))/norm(target_patch_sub_mean)) - (target_patch_sub_mean*target_patch_sub_mean').*(norm(target_patch_sub_mean)).^-3);
+                    d_target_patch_sub_mean_d_target_patch = eye(length(target_patch)) - ones(length(target_patch),length(target_patch))./length(target_patch);
+                    d_err_d_target_patch = d_err_d_target_patch_sub_mean * d_target_patch_sub_mean_d_target_patch;
+%                     d_err_d_host_patch = d_err_d_target_patch;
+                end
+            end
+        end
         rs2 = rs.^2;
         %%
         if ~switch_jac
@@ -1367,28 +1419,66 @@ for i = 1 : size(pt_host,1)
             A1t(1, :) = patch2_comp';
             A1t(2, :) = (e_a0ma1);
         end
+        if use_ZNCC
+            A0t = ones(size(A0t)); %    ./size(A0t,2);
+            A1t = ones(size(A1t));  % ./size(A1t,2);
+        end
         if inverse_comp
             It = [gx(ind) gy(ind)]';
-            if compensate_ab
-                if switch_jac
-                    It = 1./  e_a0ma1 * It;
+            [~,gs] = NormalizeVector(It');
+            if ~use_ZNCC
+                if compensate_ab
+                    if switch_jac
+                        It = 1./  e_a0ma1 * It;
+                    else
+                        It =  e_a1ma0 * It;
+                    end
                 else
-                    It =  e_a1ma0 * It;
+                    
                 end
+            else
+                 if switch_jac
+                     It = (d_err_d_host_patch * It')';
+                 else
+                     It = (d_err_d_host_patch * It')';
+                 end
             end
         else
             It = [warped_gx warped_gy]';
-            if compensate_ab
-                It = 1./  e_a1ma0 * It;
+            [~,gs] = NormalizeVector(It');
+            if ~use_ZNCC
+                if compensate_ab
+                    It = 1./  e_a1ma0 * It;
+                end
+            else
+                if switch_jac
+                     It = (d_err_d_target_patch * It')';
+                 else
+                     It = (d_err_d_target_patch * It')';
+                 end
             end
         end
         
-        [~,gs] = NormalizeVector(It');
+%         [~,gs] = NormalizeVector(It');
         gs2 = gs.^2;
         w = CalcWeight(rs2, gs2);
         if ~use_weight
             w = ones(size(w));
         end
+        
+%         if use_ZNCC
+%             
+%             if inverse_comp
+%                 It = [gx(ind) gy(ind)]';
+%                 
+%                 
+%             else
+%                 It = [warped_gx warped_gy]';
+%                 
+%             end
+%             
+%         end
+        
         % PatchHessian1的生命周期只存在与单个点的处理中，跨点了就销毁老的PatchHessian1，重新新建一个新的PatchHessian1
         PatchHessian1 =  SetI(It, rs, w);
         
