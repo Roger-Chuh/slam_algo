@@ -134,21 +134,27 @@ end
     
 depth_noise = -100; -500; 100; -100;-100; 0;
 use_DT = false;true; false; true;
-use_ZNCC = true; false; true;
+use_ZNCC = false; true; false; true; false; true;
 if 0
     pose_noise = false;true;false;true;
     fix_pose = true; false; true;
     est_intr =  true; false; true;false;
     inverse_comp = false; true; false; true; false; true; false; true; false; true; false; true; false; true;
     est_depth =  0;1;0;1;0;1;0;1; 0;1;
-else
+elseif 1
     pose_noise = true;false;true;
     fix_pose = false; true;
     est_intr = false; true;false;
     inverse_comp = true; false; true; false; true; false; true; false; true; false; true; false; true;
     est_depth =  1;0;1;0;1;0;1; 0;1;
+else
+    pose_noise = false;true;false;true;
+    fix_pose = true; false; true;
+    est_intr =  false; true; false; true;false;
+    inverse_comp = true; false; true; false; true; false; true; false; true; false; true; false; true; false; true;
+    est_depth = 1; 0;1;0;1;0;1;0;1; 0;1;
 end
-mixed_comp = false;
+mixed_comp = false;true; false;
 switch_jac = false;true; false;
 est_affine = 1; 0; 1; 0;1;1;0;1;
 
@@ -190,7 +196,7 @@ end
 function OptimizeFlowFull()
 % function OptimizeFlowFull(IntrMatList)
 global point_id  block point_id_offset Depth_meas imgs depths Tcws abs last_point_id est_affine est_depth Depth_change use_half iter inverse_comp depth_noise ab_stack ...
-    switch_jac use_weight compensate_ab pose_noise pyr_level do_log est_intr IntrMatList fix_pose use_DT use_ZNCC mixed_comp;
+    switch_jac use_weight compensate_ab pose_noise pyr_level do_log est_intr IntrMatList fix_pose use_DT use_ZNCC mixed_comp zncc_err_stack;
 % Depth_meas = cell(length(imgs)-1, length(imgs));
 
 Depth_meas_check = Depth_meas;
@@ -241,23 +247,23 @@ if 0
     err_pose{28,1}= [rodrigues([0.001 0.001 -0.001]) [2 -1 -5]'; 0 0 0 1];
     err_pose{29,1}= [rodrigues([0.001 -0.001 0.001]) [-1 -2 -2]'; 0 0 0 1];
     err_pose{30,1}= [rodrigues([0.001 -0.001 0.001]) [-1 2 2]'; 0 0 0 1];
-elseif 0
-    err_pose{2,1}= [rodrigues([-0.001 0.002 0.001]) [6 8 0]'; 0 0 0 1];
-    err_pose{3,1}= [rodrigues([0.002 -0.001 0.004]) [2 5 -2]'; 0 0 0 1];
-    err_pose{4,1}= [rodrigues([0.002 0.004 -0.001]) [2 2 -5]'; 0 0 0 1];
-    err_pose{5,1}= [rodrigues([-0.002 0.004 0.001]) [-2 -2 -3]'; 0 0 0 1];
+elseif 1
+    err_pose{2,1}= [rodrigues([-0.002 0.004 0.003]) [6 8 0]'; 0 0 0 1];
+    err_pose{3,1}= [rodrigues([0.003 -0.003 0.004]) [3 5 -2]'; 0 0 0 1];
+    err_pose{4,1}= [rodrigues([0.002 0.004 -0.003]) [3 2 -5]'; 0 0 0 1];
+    err_pose{5,1}= [rodrigues([-0.002 0.004 0.003]) [-3 -5 -3]'; 0 0 0 1];
     
     % err_pose{2,1}= [rodrigues([-0.001 0.002 0.001]) [6 8 0]'; 0 0 0 1];
     % err_pose{3,1}= [rodrigues([0.002 -0.002 0.003]) [5 3 -5]'; 0 0 0 1];
     % err_pose{4,1}= [rodrigues([0.003 0.002 -0.001]) [5 5 -5]'; 0 0 0 1];
     % err_pose{5,1}= [rodrigues([-0.002 0.002 0.002]) [-5 -2 -6]'; 0 0 0 1];
     
-    err_pose{6,1}= [rodrigues([0.004 0.002 0.001]) [5 2 5]'; 0 0 0 1];
-    err_pose{7,1}= [rodrigues([0.001 -0.002 0.004]) [2 5 -5]'; 0 0 0 1];
-    err_pose{8,1}= [rodrigues([-0.001 0.004 -0.002]) [5 2 -5]'; 0 0 0 1];
-    err_pose{9,1}= [rodrigues([0.004 -0.002 0.002]) [5 -5 -2]'; 0 0 0 1];
-    err_pose{10,1}= [rodrigues([0.001 0.005 0.001]) [1 5 5]'; 0 0 0 1];
-    err_pose{11,1}= [rodrigues([0.001 -0.001 0.001]) [2 5 -5]'; 0 0 0 1];
+    err_pose{6,1}= [rodrigues([0.004 0.002 0.003]) [5 2 5]'; 0 0 0 1];
+    err_pose{7,1}= [rodrigues([0.003 -0.002 0.004]) [3 5 -5]'; 0 0 0 1];
+    err_pose{8,1}= [rodrigues([-0.003 0.004 -0.002]) [5 3 -5]'; 0 0 0 1];
+    err_pose{9,1}= [rodrigues([0.004 -0.002 0.003]) [5 -5 -3]'; 0 0 0 1];
+    err_pose{10,1}= [rodrigues([0.003 0.005 0.003]) [3 5 5]'; 0 0 0 1];
+    err_pose{11,1}= [rodrigues([0.001 -0.002 0.003]) [2 5 -5]'; 0 0 0 1];
     err_pose{12,1}= [rodrigues([0.001 0.001 -0.001]) [5 2 -5]'; 0 0 0 1];
     err_pose{13,1}= [rodrigues([0.001 -0.001 0.001]) [5 -5 -2]'; 0 0 0 1];
     err_pose{14,1}= [rodrigues([0.001 0.001 0.001]) [1 1 5]'; 0 0 0 1];
@@ -277,8 +283,44 @@ elseif 0
     err_pose{28,1}= [rodrigues([0.001 0.001 -0.001]) [2 -1 -5]'; 0 0 0 1];
     err_pose{29,1}= [rodrigues([0.001 -0.001 0.001]) [-1 -2 -2]'; 0 0 0 1];
     err_pose{30,1}= [rodrigues([0.001 -0.001 0.001]) [-1 2 2]'; 0 0 0 1];
-else
+elseif 1 % 最大的误差， ZNSSD也能收敛
     err_pose{2,1}= [rodrigues([-0.001 0.002 0.001]) [6 8 0]'; 0 0 0 1];
+    err_pose{3,1}= [rodrigues([0.005 -0.005 0.03]) [5 3 -5]'; 0 0 0 1];
+    err_pose{4,1}= [rodrigues([0.02 0.01 -0.01]) [5 5 -5]'; 0 0 0 1];
+    err_pose{5,1}= [rodrigues([-0.01 0.002 0.005]) [-5 -2 -6]'; 0 0 0 1];
+    
+    % err_pose{2,1}= [rodrigues([-0.001 0.002 0.001]) [6 8 0]'; 0 0 0 1];
+    % err_pose{3,1}= [rodrigues([0.002 -0.002 0.003]) [5 3 -5]'; 0 0 0 1];
+    % err_pose{4,1}= [rodrigues([0.003 0.002 -0.001]) [5 5 -5]'; 0 0 0 1];
+    % err_pose{5,1}= [rodrigues([-0.002 0.002 0.002]) [-5 -2 -6]'; 0 0 0 1];
+    
+    err_pose{6,1}= [rodrigues([0.02 0.002 0.001]) [6 8 0]'; 0 0 0 1];
+    err_pose{7,1}= [rodrigues([0.002 -0.02 0.002]) [5 3 -10]'; 0 0 0 1];
+    err_pose{8,1}= [rodrigues([0.03 0.002 -0.001]) [5 5 -5]'; 0 0 0 1];
+    err_pose{9,1}= [rodrigues([0.001 -0.02 0.003]) [5 -2 -6]'; 0 0 0 1];
+    err_pose{10,1}= [rodrigues([0.02 0.02 0.001]) [6 8 0]'; 0 0 0 1];
+    err_pose{11,1}= [rodrigues([0.002 -0.002 0.02]) [5 3 -10]'; 0 0 0 1];
+    err_pose{12,1}= [rodrigues([0.003 0.002 -0.001]) [5 5 -5]'; 0 0 0 1];
+    err_pose{13,1}= [rodrigues([0.01 -0.002 0.003]) [5 -2 -6]'; 0 0 0 1];
+    err_pose{14,1}= [rodrigues([0.002 0.002 0.001]) [6 8 0]'; 0 0 0 1];
+    err_pose{15,1}= [rodrigues([0.002 -0.02 0.002]) [5 3 -10]'; 0 0 0 1];
+    err_pose{16,1}= [rodrigues([0.003 0.002 -0.001]) [5 5 -5]'; 0 0 0 1];
+    err_pose{17,1}= [rodrigues([0.001 -0.02 0.003]) [5 -2 -6]'; 0 0 0 1];
+    err_pose{18,1}= [rodrigues([0.002 0.002 0.001]) [6 8 0]'; 0 0 0 1];
+    err_pose{19,1}= [rodrigues([0.002 -0.02 0.002]) [5 3 -10]'; 0 0 0 1];
+    err_pose{20,1}= [rodrigues([0.003 0.002 -0.001]) [5 5 -5]'; 0 0 0 1];
+    err_pose{21,1}= [rodrigues([0.01 -0.002 0.003]) [5 -2 -6]'; 0 0 0 1];
+    err_pose{22,1}= [rodrigues([0.002 0.002 0.001]) [6 8 0]'; 0 0 0 1];
+    err_pose{23,1}= [rodrigues([0.02 -0.002 0.002]) [5 3 -10]'; 0 0 0 1];
+    err_pose{24,1}= [rodrigues([0.003 0.002 -0.01]) [5 5 -5]'; 0 0 0 1];
+    err_pose{25,1}= [rodrigues([0.001 -0.002 0.003]) [5 -2 -6]'; 0 0 0 1];
+    err_pose{26,1}= [rodrigues([0.002 0.002 0.01]) [6 8 0]'; 0 0 0 1];
+    err_pose{27,1}= [rodrigues([0.002 -0.002 0.002]) [5 3 -10]'; 0 0 0 1];
+    err_pose{28,1}= [rodrigues([0.003 0.002 -0.001]) [5 5 -5]'; 0 0 0 1];
+    err_pose{29,1}= [rodrigues([0.001 -0.02 0.003]) [5 -2 -6]'; 0 0 0 1];
+    err_pose{30,1}= [rodrigues([0.01 -0.002 0.003]) [5 -2 -6]'; 0 0 0 1];
+else % 最大的误差， ZNSSD不能收敛
+     err_pose{2,1}= [rodrigues([-0.001 0.002 0.001]) [6 8 0]'; 0 0 0 1];
     err_pose{3,1}= [rodrigues([0.005 -0.005 0.003]) [5 3 -5]'; 0 0 0 1];
     err_pose{4,1}= [rodrigues([0.03 0.005 -0.006]) [5 5 -5]'; 0 0 0 1];
     err_pose{5,1}= [rodrigues([-0.01 0.002 0.005]) [-5 -2 -6]'; 0 0 0 1];
@@ -293,7 +335,7 @@ else
     err_pose{8,1}= [rodrigues([0.003 0.002 -0.001]) [5 5 -5]'; 0 0 0 1];
     err_pose{9,1}= [rodrigues([0.001 -0.02 0.003]) [5 -2 -6]'; 0 0 0 1];
     err_pose{10,1}= [rodrigues([0.002 0.002 0.001]) [6 8 0]'; 0 0 0 1];
-    err_pose{11,1}= [rodrigues([0.002 -0.002 0.02]) [5 3 -10]'; 0 0 0 1];
+     err_pose{11,1}= [rodrigues([0.002 -0.002 0.02]) [5 3 -10]'; 0 0 0 1];
     err_pose{12,1}= [rodrigues([0.003 0.002 -0.001]) [5 5 -5]'; 0 0 0 1];
     err_pose{13,1}= [rodrigues([0.01 -0.002 0.003]) [5 -2 -6]'; 0 0 0 1];
     err_pose{14,1}= [rodrigues([0.002 0.002 0.001]) [6 8 0]'; 0 0 0 1];
@@ -476,7 +518,9 @@ for pyr_lvl = 1 : pyr_level
         %         point_id = zeros(1, pyr_level);
         %         last_point_id = zeros(1, pyr_level);
         
-        
+        if iter == 18
+            zncc_err_stack = [];
+        end
         % 不同次迭代之间都是独立的，所有buffer以及统计的id可以清空或置零。
         
         point_id(pyr_lvl) = 0;
@@ -738,7 +782,9 @@ blk = block;
 % blk.Hmm_inv = inv(blk.Hmm);
 % assert(isempty(find(blk.Hmm == 0)));
 % blk.Hmm(find(blk.Hmm == 0)) = 0.00001;
-blk.Hmm_inv = diag(1./blk.Hmm);
+H22_inv = 1./blk.Hmm;
+H22_inv(isinf(H22_inv)) = 0;
+blk.Hmm_inv = diag(H22_inv);
 
 if 0
     figure,imshow(abs(blk.Hpp),[]);
@@ -773,9 +819,9 @@ else
 end
 
 if use_ZNCC
-    large = 1e10; 5e14;
+    large = 1e8;  1e10; 1e8;  1e10; 5e14; 
 else
-    large = 5e14;
+    large = 5e16; 5e14;
 end
 medium =  1e5; 1; 1e5;1e6;1e5;1e4; 1e6; 1e8;100; 10000; 1e4;1;100; 1;1e4; 10;1e2;1;1e2;1e2;1e4;
 small =  100; 1; 100; 1e4;
@@ -1040,10 +1086,13 @@ end
 
 function [depth_meas, reproj_error] = Adjust(pyr_lvl, frame_i, frame_j , host_img, host_depth,host_depth_gt, target_img, target_depth, target_depth_gt,Twh, Twt,Twh_gt, Twt_gt, alpha_h, beta_h, alpha_t, beta_t, intrMat_host, intrMat_target, host_intr_id, target_intr_id, intrMat_host_gt, intrMat_target_gt)
 global point_id block point_id_offset Depth_meas last_point_id est_affine est_depth use_half iter inverse_comp switch_jac ...
-    use_weight compensate_ab pyr_level est_intr use_ZNCC mixed_comp;
+    use_weight compensate_ab pyr_level est_intr use_ZNCC mixed_comp zncc_err_stack;
 
 % inverse_comp = true; false; true;  false; true; true; false;
 
+
+
+% zncc_err_stack = [];
 
 if (inverse_comp)
 %     switch_jac = true;
@@ -1147,7 +1196,9 @@ pt_host = pt_host(pt_host(:,1) > border(pyr_lvl) & pt_host(:,1)< width-border(py
 if 0
     figure,imshow(host_img, []);hold on;plot(pt_host(:,1), pt_host(:,2),'or','MarkerSize',5,'LineWidth',5);
 end
-
+if iter == 1
+%     pt_host = pt_host(1,:);
+end
 gx = zeros(size(host_img));
 gy = gx;
 
@@ -1372,8 +1423,15 @@ for i = 1 : size(pt_host,1)
             target_patch_sub_mean = target_patch - mean(target_patch);
             host_patch_sub_mean_normalized = host_patch_sub_mean./norm(host_patch_sub_mean);
             target_patch_sub_mean_normalized = target_patch_sub_mean./norm(target_patch_sub_mean);
+            if (iter == 18)
+                
+               zncc_err_stack = [zncc_err_stack; [host_patch_sub_mean_normalized' target_patch_sub_mean_normalized']]; 
+            end
             if ~switch_jac
                 rs = 255./255.*(target_patch_sub_mean_normalized - host_patch_sub_mean_normalized);
+%                 fprintf('------\n');
+%                 fprintf(sprintf('target: [%f %f %f %f %f %f %f %f %f]\n',target_patch_sub_mean_normalized'));
+%                 fprintf(sprintf('host  : [%f %f %f %f %f %f %f %f %f]\n',host_patch_sub_mean_normalized'));
 %                 rs = -255./255.*(target_patch_sub_mean_normalized - host_patch_sub_mean_normalized);
                  
                  if (mixed_comp)   
@@ -1386,11 +1444,15 @@ for i = 1 : size(pt_host,1)
                     d_err_d_host_patch_sub_mean = ((eye(length(host_patch_sub_mean))/norm(host_patch_sub_mean)) - (host_patch_sub_mean*host_patch_sub_mean').*(norm(host_patch_sub_mean)).^-3);
                     d_host_patch_sub_mean_d_host_patch = eye(length(host_patch)) - ones(length(host_patch),length(host_patch))./length(host_patch);
                     d_err_d_host_patch = d_err_d_host_patch_sub_mean * d_host_patch_sub_mean_d_host_patch;
+                    
                 else
                     d_err_d_target_patch_sub_mean = ((eye(length(target_patch_sub_mean))/norm(target_patch_sub_mean)) - (target_patch_sub_mean*target_patch_sub_mean').*(norm(target_patch_sub_mean)).^-3);
                     d_target_patch_sub_mean_d_target_patch = eye(length(target_patch)) - ones(length(target_patch),length(target_patch))./length(target_patch);
                     d_err_d_target_patch = d_err_d_target_patch_sub_mean * d_target_patch_sub_mean_d_target_patch;
                     d_err_d_host_patch = d_err_d_target_patch;
+%                     if(norm(rs) > 0.999)
+%                         d_err_d_host_patch = -d_err_d_host_patch;
+%                     end
                 end
             else
                 rs = 1.*(host_patch_sub_mean_normalized - target_patch_sub_mean_normalized);

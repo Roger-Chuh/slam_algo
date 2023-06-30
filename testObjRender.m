@@ -116,6 +116,27 @@ if 0
     trans(:,3) = trans_list;
 elseif 0
     trans(:,1) = trans_list;
+elseif 0
+    segment = round(length(trans_list)/3);
+    segment = 5;
+    trans0  = trans(1:segment,:);
+    trans_ = trans0;
+    trans_(1:segment,1) = trans_list(1:segment);
+    trans_1 = trans_(1:segment,:);
+    trans_2 = -trans_(1:segment,:);
+    trans_ = trans0;
+    trans_(1:segment,2) = trans_list(1:segment);
+    trans_3 = trans_(1:segment,:);
+    trans_4 = -trans_(1:segment,:);
+    trans_ = trans0;
+    trans_(1:segment,3) = trans_list(1:segment);
+    trans_5 = trans_(1:segment,:);
+    trans_6 = -trans_(1:segment,:);
+    %     trans_1 = trans(1:segment,1);
+    %     trans_2 = -trans(1:segment,1);
+    %     trans(segment+1:2*segment,2) = trans_list(segment+1:2*segment);
+    %     trans(2*segment+1:end,3) = trans_list(2*segment+1:end);
+    trans = [trans_1; trans_2; trans_3;trans_4;trans_5;trans_6];
 else
     segment = round(length(trans_list)/3);
     segment = 5;
@@ -132,11 +153,11 @@ else
     trans_(1:segment,3) = trans_list(1:segment);
     trans_5 = trans_(1:segment,:);
     trans_6 = -trans_(1:segment,:);
-%     trans_1 = trans(1:segment,1);
-%     trans_2 = -trans(1:segment,1);
-%     trans(segment+1:2*segment,2) = trans_list(segment+1:2*segment);
-%     trans(2*segment+1:end,3) = trans_list(2*segment+1:end);
-trans = [trans_1; trans_2; trans_3;trans_4;trans_5;trans_6];
+    %     trans_1 = trans(1:segment,1);
+    %     trans_2 = -trans(1:segment,1);
+    %     trans(segment+1:2*segment,2) = trans_list(segment+1:2*segment);
+    %     trans(2*segment+1:end,3) = trans_list(2*segment+1:end);
+    trans = [trans_1; trans_2; trans_3;trans_4;trans_5;trans_6];
 end
 
 
@@ -149,7 +170,7 @@ for i = 1 : size(trans,1)
         RRR = roty(angList(i));
         T_delt = [RRR [0;0;0]; 0 0 0 1];
     else
-        T_delt = [rodrigues(0.05.*(rand(3,1)-0.5)) trans(i,:)'; 0 0 0 1];
+        T_delt = [rodrigues(0.5.*(rand(3,1)-0.5)) trans(i,:)'; 0 0 0 1];
     end
     k2c_comp{i,1} = b2c * T_delt * inv(b2c);
     if i == 1

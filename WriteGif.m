@@ -9,7 +9,8 @@ for idx = 1:nImages
         img = imresize(imread(fullfile(inputDir, dirInfo(idx).name)),[360,640]);
     else
         imgg = imread(fullfile(inputDir, dirInfo(idx).name));
-        img = imgg(71:1287, 611:2236,:);
+%         img = imgg(71:1287, 611:2236,:);
+        img = imgg;
     end
 % %     img = imresize(img(21:386,143:583,:), 2);
     [A,map] = rgb2ind(img,256);
