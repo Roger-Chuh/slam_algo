@@ -160,7 +160,8 @@ else
     trans = [trans_1; trans_2; trans_3;trans_4;trans_5;trans_6];
 end
 
-
+trans(2,:) = [0 0 -500];
+trans(3,:) = [0 0 1500];
 
 for i = 1 : size(trans,1)
 %     for i = 1 : length(angList)
@@ -170,7 +171,7 @@ for i = 1 : size(trans,1)
         RRR = roty(angList(i));
         T_delt = [RRR [0;0;0]; 0 0 0 1];
     else
-        T_delt = [rodrigues(0.5.*(rand(3,1)-0.5)) trans(i,:)'; 0 0 0 1];
+        T_delt = [rodrigues(0.9.*(rand(3,1)-0.5)) trans(i,:)'; 0 0 0 1];
     end
     k2c_comp{i,1} = b2c * T_delt * inv(b2c);
     if i == 1
@@ -190,8 +191,8 @@ for i = 1 : size(trans,1)
     
     [obj_test2, inlierId] = procObj(obj_test, depthThr, T1(1:3,1:3), T1(1:3,4));
     [xyzOrig22, imgCur022, depthMap22, Vcam22] = render_fcn(obj_test2, T1(1:3,1:3), T1(1:3,4));
-    if 0
-        pt = detectFASTFeatures(rgb2gray(imgCur022),'MinQuality',0.01,'MinContrast',0.01);
+    if 1
+        pt = detectFASTFeatures(rgb2gray(imgCur022),'MinQuality',0.3,'MinContrast',0.3);
         figure,imshow(imgCur022);hold on;plot(pt.Location(:,1), pt.Location(:,2), '.r')
     end
     
@@ -248,7 +249,7 @@ if(i == -2)
     subplot(1,2,2);imshow([align_depth_error align_depth_error_ratio],[]);
 end
 
-if (length(k2c_comp) >=  size(trans,1)) % 5)
+if (length(k2c_comp) >= 3)% size(trans,1)) % 5)
     save('pba_adjust.mat','k2c_comp', 'LR', 'Depth', 'intrMat');
     testDirestAlign(k2c_comp, LR, Depth, intrMat);
 end
