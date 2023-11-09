@@ -94,6 +94,7 @@ else
         b2c = [rodrigues([0.1 0.2 -0.1]) [0.6;800;-33];0 0 0 1];
     else
         b2c = [rodrigues([0.1 0.2 -0.1]) [0.6;1500;-33];0 0 0 1];
+%          b2c = [rodrigues([0 0 0]) [0.6;1500;-33];0 0 0 1];
     end
 % %     b2c = eye(4);
     intrMatNew = intrMat;
