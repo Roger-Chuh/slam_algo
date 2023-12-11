@@ -1,7 +1,8 @@
 function testDirestAlignFullMultiIntr()
 % function testDirestAlignFullMultiIntr(k2c_comp, LR, Depth, intrMat)
 global point_id  block  point_id_offset imgs depths Tcws abs last_point_id est_affine est_depth Depth_change use_half inverse_comp  Depth_meas ...
-    depth_noise switch_jac use_weight compensate_ab pose_noise pyr_level do_log est_intr IntrMatList fix_pose use_DT use_ZNCC mixed_comp;
+    depth_noise switch_jac use_weight compensate_ab pose_noise pyr_level do_log est_intr IntrMatList fix_pose use_DT use_ZNCC mixed_comp ...
+    use_new_res fix_res res_scale;
 
 % clear;
 
@@ -134,7 +135,15 @@ end
     
 depth_noise = -100; -500; 100; -100;-100; 0;
 use_DT = false;true; false; true;
-use_ZNCC = false; true; false; true; false; true;
+use_ZNCC = true;false; true; false; true; false; true;
+
+% if use_ZNCC
+%     use_new_res = true;
+%     mixed_comp = false;
+% else
+%     use_new_res = false;
+% end
+
 if 0
     pose_noise = false;true;false;true;
     fix_pose = true; false; true;
@@ -146,7 +155,7 @@ elseif 1
     fix_pose = false; true;
     est_intr = false; true;false;
     inverse_comp = true; false; true; false; true; false; true; false; true; false; true; false; true;
-    est_depth =  1;0;1;0;1;0;1; 0;1;
+    est_depth = 0; 1;0;1;0;1;0;1; 0;1;
 else
     pose_noise = false;true;false;true;
     fix_pose = true; false; true;
@@ -157,6 +166,21 @@ end
 mixed_comp = false;true; false;
 switch_jac = false;true; false;
 est_affine = 1; 0; 1; 0;1;1;0;1;
+
+
+if use_ZNCC
+    use_new_res = true;
+    if use_new_res
+        fix_res = true;
+        if fix_res
+            res_scale = 100;20;10;50;1;10;
+        end
+    end
+%     mixed_comp = false;
+else
+    use_new_res = false;
+end
+
 
 if use_ZNCC
     est_affine = 0;
@@ -247,7 +271,7 @@ if 0
     err_pose{28,1}= [rodrigues([0.001 0.001 -0.001]) [2 -1 -5]'; 0 0 0 1];
     err_pose{29,1}= [rodrigues([0.001 -0.001 0.001]) [-1 -2 -2]'; 0 0 0 1];
     err_pose{30,1}= [rodrigues([0.001 -0.001 0.001]) [-1 2 2]'; 0 0 0 1];
-elseif 1
+elseif 0
     err_pose{2,1}= [rodrigues([-0.002 0.004 0.003]) [6 8 0]'; 0 0 0 1];
     err_pose{3,1}= [rodrigues([0.003 -0.003 0.004]) [3 5 -2]'; 0 0 0 1];
     err_pose{4,1}= [rodrigues([0.002 0.004 -0.003]) [3 2 -5]'; 0 0 0 1];
@@ -1086,7 +1110,7 @@ end
 
 function [depth_meas, reproj_error] = Adjust(pyr_lvl, frame_i, frame_j , host_img, host_depth,host_depth_gt, target_img, target_depth, target_depth_gt,Twh, Twt,Twh_gt, Twt_gt, alpha_h, beta_h, alpha_t, beta_t, intrMat_host, intrMat_target, host_intr_id, target_intr_id, intrMat_host_gt, intrMat_target_gt)
 global point_id block point_id_offset Depth_meas last_point_id est_affine est_depth use_half iter inverse_comp switch_jac ...
-    use_weight compensate_ab pyr_level est_intr use_ZNCC mixed_comp zncc_err_stack;
+    use_weight compensate_ab pyr_level est_intr use_ZNCC mixed_comp zncc_err_stack use_new_res fix_res res_scale;
 
 % inverse_comp = true; false; true;  false; true; true; false;
 
@@ -1213,6 +1237,16 @@ gy1(2 : height-1, :) = 0.5 * (target_img(3:height,:) - target_img(1:height-2,:))
 
 % offset = [0 0; 0 1; 1 0; 0 -1; -1 0];
 offset = [0 0; 0 2; 2 0; 0 -2; -2 0;-1 -1;1 -1;-1 1;1 1];
+
+
+% offset = offset .* 2^(pyr_lvl-1);
+
+
+% if pyr_lvl == 3
+%     fix_res = true;
+% else
+%     fix_res = false;
+% end
 
 % est_affine = 0;1;
 
@@ -1429,6 +1463,12 @@ for i = 1 : size(pt_host,1)
             end
             if ~switch_jac
                 rs = 255./255.*(target_patch_sub_mean_normalized - host_patch_sub_mean_normalized);
+                if use_new_res && ~fix_res
+                   rs = rs * norm(host_patch_sub_mean);
+                end
+                if use_new_res && fix_res
+                    rs = rs * res_scale;
+                end
 %                 fprintf('------\n');
 %                 fprintf(sprintf('target: [%f %f %f %f %f %f %f %f %f]\n',target_patch_sub_mean_normalized'));
 %                 fprintf(sprintf('host  : [%f %f %f %f %f %f %f %f %f]\n',host_patch_sub_mean_normalized'));
@@ -1444,7 +1484,9 @@ for i = 1 : size(pt_host,1)
                     d_err_d_host_patch_sub_mean = ((eye(length(host_patch_sub_mean))/norm(host_patch_sub_mean)) - (host_patch_sub_mean*host_patch_sub_mean').*(norm(host_patch_sub_mean)).^-3);
                     d_host_patch_sub_mean_d_host_patch = eye(length(host_patch)) - ones(length(host_patch),length(host_patch))./length(host_patch);
                     d_err_d_host_patch = d_err_d_host_patch_sub_mean * d_host_patch_sub_mean_d_host_patch;
-                    
+                    if use_new_res
+                        d_err_d_host_patch = d_err_d_host_patch * norm(host_patch_sub_mean);
+                    end
                 else
                     d_err_d_target_patch_sub_mean = ((eye(length(target_patch_sub_mean))/norm(target_patch_sub_mean)) - (target_patch_sub_mean*target_patch_sub_mean').*(norm(target_patch_sub_mean)).^-3);
                     d_target_patch_sub_mean_d_target_patch = eye(length(target_patch)) - ones(length(target_patch),length(target_patch))./length(target_patch);
@@ -1456,10 +1498,19 @@ for i = 1 : size(pt_host,1)
                 end
             else
                 rs = 1.*(host_patch_sub_mean_normalized - target_patch_sub_mean_normalized);
+                if use_new_res && ~fix_res
+                   rs = rs * norm(host_patch_sub_mean);
+                end
+                if use_new_res && fix_res
+                    rs = rs * res_scale;
+                end
                 if inverse_comp
                     d_err_d_host_patch_sub_mean = ((eye(length(host_patch_sub_mean))/norm(host_patch_sub_mean)) - (host_patch_sub_mean*host_patch_sub_mean').*(norm(host_patch_sub_mean)).^-3);
                     d_host_patch_sub_mean_d_host_patch = eye(length(host_patch)) - ones(length(host_patch),length(host_patch))./length(host_patch);
                     d_err_d_host_patch = d_err_d_host_patch_sub_mean * d_host_patch_sub_mean_d_host_patch;
+                    if use_new_res
+                        d_err_d_host_patch = d_err_d_host_patch * norm(host_patch_sub_mean);
+                    end
                 else
                     d_err_d_target_patch_sub_mean = -((eye(length(target_patch_sub_mean))/norm(target_patch_sub_mean)) - (target_patch_sub_mean*target_patch_sub_mean').*(norm(target_patch_sub_mean)).^-3);
                     d_target_patch_sub_mean_d_target_patch = eye(length(target_patch)) - ones(length(target_patch),length(target_patch))./length(target_patch);
