@@ -2,7 +2,7 @@ function testDirestAlignFullMultiIntr()
 % function testDirestAlignFullMultiIntr(k2c_comp, LR, Depth, intrMat)
 global point_id  block  point_id_offset imgs depths Tcws abs last_point_id est_affine est_depth Depth_change use_half inverse_comp  Depth_meas ...
     depth_noise switch_jac use_weight compensate_ab pose_noise pyr_level do_log est_intr IntrMatList fix_pose use_DT use_ZNCC mixed_comp ...
-    use_new_res fix_res res_scale;
+    use_new_res fix_res res_scale use_jac_weight;
 
 % clear;
 
@@ -155,7 +155,7 @@ elseif 1
     fix_pose = false; true;
     est_intr = false; true;false;
     inverse_comp = true; false; true; false; true; false; true; false; true; false; true; false; true;
-    est_depth = 0; 1;0;1;0;1;0;1; 0;1;
+    est_depth = 1;0;1;0;1;0;1; 0;1;
 else
     pose_noise = false;true;false;true;
     fix_pose = true; false; true;
@@ -169,12 +169,13 @@ est_affine = 1; 0; 1; 0;1;1;0;1;
 
 
 if use_ZNCC
-    use_new_res = true;
+    use_new_res = true;false;true;
     if use_new_res
-        fix_res = true;
+        fix_res = false;true;
         if fix_res
             res_scale = 100;20;10;50;1;10;
         end
+        use_jac_weight = true;
     end
 %     mixed_comp = false;
 else
@@ -236,6 +237,42 @@ ab_noise=[[6.94776699491607e-16,-1.82028969547464e-13;-0.5503948664055963,-50.81
 ab_noise =[ab_noise;ab_noise;ab_noise;ab_noise;ab_noise;ab_noise;ab_noise;ab_noise;ab_noise];
 err_pose={};
 if 0
+     err_pose{2,1}= [rodrigues([-0.001 0.001 0.001]) [3 4 0]'; 0 0 0 1];
+    err_pose{3,1}= [rodrigues([0.001 -0.001 0.001]) [2 3 -2]'; 0 0 0 1];
+    err_pose{4,1}= [rodrigues([0.001 0.001 -0.001]) [2 2 -3]'; 0 0 0 1];
+    err_pose{5,1}= [rodrigues([-0.001 0.001 0.001]) [-2 -2 -3]'; 0 0 0 1];
+    
+    % err_pose{2,1}= [rodrigues([-0.001 0.002 0.001]) [6 8 0]'; 0 0 0 1];
+    % err_pose{3,1}= [rodrigues([0.002 -0.002 0.003]) [5 3 -5]'; 0 0 0 1];
+    % err_pose{4,1}= [rodrigues([0.003 0.002 -0.001]) [5 5 -5]'; 0 0 0 1];
+    % err_pose{5,1}= [rodrigues([-0.002 0.002 0.002]) [-5 -2 -6]'; 0 0 0 1];
+    
+    err_pose{6,1}= [rodrigues([0.001 0.001 0.001]) [2.5 2 3]'; 0 0 0 1];
+    err_pose{7,1}= [rodrigues([0.001 -0.001 0.001]) [2 2.5 -3]'; 0 0 0 1];
+    err_pose{8,1}= [rodrigues([-0.001 0.001 -0.001]) [2.5 2 -3]'; 0 0 0 1];
+    err_pose{9,1}= [rodrigues([0.001 -0.001 0.001]) [3 -2.5 -2]'; 0 0 0 1];
+    err_pose{10,1}= [rodrigues([0.001 0.001 0.001]) [1 2.5 3]'; 0 0 0 1];
+    err_pose{11,1}= [rodrigues([0.001 -0.001 0.001]) [2 3 -2.5]'; 0 0 0 1];
+    err_pose{12,1}= [rodrigues([0.001 0.001 -0.001]) [2.5 2 -3]'; 0 0 0 1];
+    err_pose{13,1}= [rodrigues([0.001 -0.001 0.001]) [2.5 -2.5 -2]'; 0 0 0 1];
+    err_pose{14,1}= [rodrigues([0.001 0.001 0.001]) [1 1 2.5]'; 0 0 0 1];
+    err_pose{15,1}= [rodrigues([0.001 -0.001 0.001]) [2 3 -2]'; 0 0 0 1];
+    err_pose{16,1}= [rodrigues([0.001 0.001 -0.001]) [2 2 -2]'; 0 0 0 1];
+    err_pose{17,1}= [rodrigues([0.001 -0.001 0.001]) [1 -2 -2]'; 0 0 0 1];
+    err_pose{18,1}= [rodrigues([0.001 0.001 0.001]) [1 2 0]'; 0 0 0 1];
+    err_pose{19,1}= [rodrigues([0.001 -0.001 0.001]) [2 3 -2]'; 0 0 0 1];
+    err_pose{20,1}= [rodrigues([0.001 0.001 -0.001]) [2 1 -2]'; 0 0 0 1];
+    err_pose{21,1}= [rodrigues([0.001 -0.001 0.001]) [1 -2 -2]'; 0 0 0 1];
+    err_pose{22,1}= [rodrigues([-0.001 0.001 0.001]) [1 2 0]'; 0 0 0 1];
+    err_pose{23,1}= [rodrigues([0.001 -0.001 -0.001]) [-1 3 -2]'; 0 0 0 1];
+    err_pose{24,1}= [rodrigues([10.001 0.001 -0.001]) [-1 2.5 -2]'; 0 0 0 1];
+    err_pose{25,1}= [rodrigues([0.001 -0.001 0.001]) [2 -2 2]'; 0 0 0 1];
+    err_pose{26,1}= [rodrigues([0.001 -0.001 0.001]) [1 -2 0]'; 0 0 0 1];
+    err_pose{27,1}= [rodrigues([-0.001 -0.001 0.001]) [-2 3 -2]'; 0 0 0 1];
+    err_pose{28,1}= [rodrigues([0.001 0.001 -0.001]) [2 -1 -2.5]'; 0 0 0 1];
+    err_pose{29,1}= [rodrigues([0.001 -0.001 0.001]) [-1 -2 -2]'; 0 0 0 1];
+    err_pose{30,1}= [rodrigues([0.001 -0.001 0.001]) [-1 2 2]'; 0 0 0 1];
+elseif 0
      err_pose{2,1}= [rodrigues([-0.001 0.002 0.001]) [6 8 0]'; 0 0 0 1];
     err_pose{3,1}= [rodrigues([0.002 -0.001 0.002]) [2 3 -2]'; 0 0 0 1];
     err_pose{4,1}= [rodrigues([0.002 0.002 -0.001]) [2 2 -3]'; 0 0 0 1];
@@ -271,7 +308,7 @@ if 0
     err_pose{28,1}= [rodrigues([0.001 0.001 -0.001]) [2 -1 -5]'; 0 0 0 1];
     err_pose{29,1}= [rodrigues([0.001 -0.001 0.001]) [-1 -2 -2]'; 0 0 0 1];
     err_pose{30,1}= [rodrigues([0.001 -0.001 0.001]) [-1 2 2]'; 0 0 0 1];
-elseif 0
+elseif 1
     err_pose{2,1}= [rodrigues([-0.002 0.004 0.003]) [6 8 0]'; 0 0 0 1];
     err_pose{3,1}= [rodrigues([0.003 -0.003 0.004]) [3 5 -2]'; 0 0 0 1];
     err_pose{4,1}= [rodrigues([0.002 0.004 -0.003]) [3 2 -5]'; 0 0 0 1];
@@ -534,9 +571,10 @@ if use_DT
 end
 
 
+zncc_err_stacks = cell(pyr_level, 1);
 for pyr_lvl = 1 : pyr_level
     
-    
+    zncc_err_stacks{pyr_lvl,1} = cell(iter_num(pyr_lvl)+1, 1);
     for iter = 0 : iter_num(pyr_lvl)
         
         %         point_id = zeros(1, pyr_level);
@@ -579,6 +617,7 @@ for pyr_lvl = 1 : pyr_level
         
         
         reproj_error_=[];
+        zncc_error_ = [];
         for i = 1 : length(imgs) + loop1
             host_img = double(imgs_pyr{i,pyr_lvl});
             host_intr = K{pyr_lvl, i}{1,1};
@@ -615,15 +654,16 @@ for pyr_lvl = 1 : pyr_level
                     Twh = Twh_gt;
                     Twt = Twt_gt;
                 end
-                [ depth_meas, reproj_error] = Adjust(pyr_lvl, i, j , host_img, host_depth, host_depth_gt, target_img, target_depth, target_depth_gt, Twh, Twt,Twh_gt, Twt_gt, alpha_h, beta_h, alpha_t, beta_t, host_intr, target_intr, host_intr_id, target_intr_id, host_intr_gt,target_intr_gt);
+                [ depth_meas, reproj_error, zncc_error] = Adjust(pyr_lvl, i, j , host_img, host_depth, host_depth_gt, target_img, target_depth, target_depth_gt, Twh, Twt,Twh_gt, Twt_gt, alpha_h, beta_h, alpha_t, beta_t, host_intr, target_intr, host_intr_id, target_intr_id, host_intr_gt,target_intr_gt);
                 reproj_error_=[reproj_error_;reproj_error];
+                zncc_error_ = [zncc_error_; zncc_error];
                 if iter >=0;
                     Depth_meas{pyr_lvl,1}{i,j} = depth_meas; %%  另外 全局变量block已经在函数内部更新，depth_meas是为了记录depth优化迭代过程
                 end
                 
             end
         end
-        
+        zncc_err_stacks{pyr_lvl,1}{iter+1,1} = zncc_error_;
         if iter > 0
             [~, reproj_error_norm] = NormalizeVector(reproj_error_);
             if ~isempty(Reproj_error{pyr_lvl})
@@ -1108,9 +1148,9 @@ function FillUpdatedDepthsInDepthMap()
 
 end
 
-function [depth_meas, reproj_error] = Adjust(pyr_lvl, frame_i, frame_j , host_img, host_depth,host_depth_gt, target_img, target_depth, target_depth_gt,Twh, Twt,Twh_gt, Twt_gt, alpha_h, beta_h, alpha_t, beta_t, intrMat_host, intrMat_target, host_intr_id, target_intr_id, intrMat_host_gt, intrMat_target_gt)
+function [depth_meas, reproj_error, zncc_error] = Adjust(pyr_lvl, frame_i, frame_j , host_img, host_depth,host_depth_gt, target_img, target_depth, target_depth_gt,Twh, Twt,Twh_gt, Twt_gt, alpha_h, beta_h, alpha_t, beta_t, intrMat_host, intrMat_target, host_intr_id, target_intr_id, intrMat_host_gt, intrMat_target_gt)
 global point_id block point_id_offset Depth_meas last_point_id est_affine est_depth use_half iter inverse_comp switch_jac ...
-    use_weight compensate_ab pyr_level est_intr use_ZNCC mixed_comp zncc_err_stack use_new_res fix_res res_scale;
+    use_weight compensate_ab pyr_level est_intr use_ZNCC mixed_comp zncc_err_stack use_new_res fix_res res_scale use_jac_weight;
 
 % inverse_comp = true; false; true;  false; true; true; false;
 
@@ -1237,9 +1277,14 @@ gy1(2 : height-1, :) = 0.5 * (target_img(3:height,:) - target_img(1:height-2,:))
 
 % offset = [0 0; 0 1; 1 0; 0 -1; -1 0];
 offset = [0 0; 0 2; 2 0; 0 -2; -2 0;-1 -1;1 -1;-1 1;1 1];
-
-
-% offset = offset .* 2^(pyr_lvl-1);
+if 0
+    [patchx, patchy] = meshgrid(-2:2,-2:2);
+    patchxy = [patchx(:) patchy(:)];
+    [~,idx_ ]= intersect(patchxy, [0 0], 'rows');
+    patchxy(idx_,:) = [];
+    offset = [[0 0];patchxy];
+end
+offset = offset .* 2^(pyr_lvl-1);
 
 
 % if pyr_lvl == 3
@@ -1306,7 +1351,8 @@ FrameHessian1.bi = zeros(10,1);
 FrameHessian1.bj = zeros(10,1);
 FrameHessian1.c = 0;
 depth_meas = [];
-reproj_error=[];
+reproj_error = [];
+zncc_error = [];
 for i = 1 : size(pt_host,1)
     pt0 = pt_host(i,:);
     pt0s = pt0 + offset;
@@ -1461,8 +1507,12 @@ for i = 1 : size(pt_host,1)
                 
                zncc_err_stack = [zncc_err_stack; [host_patch_sub_mean_normalized' target_patch_sub_mean_normalized']]; 
             end
+            zncc_error = [zncc_error; dot(host_patch_sub_mean_normalized, target_patch_sub_mean_normalized)];
             if ~switch_jac
                 rs = 255./255.*(target_patch_sub_mean_normalized - host_patch_sub_mean_normalized);
+                if (sum(isnan(rs)) > 0)
+                   asdkjh = 1; 
+                end
                 if use_new_res && ~fix_res
                    rs = rs * norm(host_patch_sub_mean);
                 end
@@ -1486,6 +1536,12 @@ for i = 1 : size(pt_host,1)
                     d_err_d_host_patch = d_err_d_host_patch_sub_mean * d_host_patch_sub_mean_d_host_patch;
                     if use_new_res
                         d_err_d_host_patch = d_err_d_host_patch * norm(host_patch_sub_mean);
+%                         if use_jac_weight
+%                             [~,dist] = NormalizeVector(J_ZNSSD_J_uv);
+%                             g2 = dist.^2;
+%                             g2 = 25.0 ./ (25.0 + g2);
+%                             gradWeightMat = diag(g2);
+%                         end
                     end
                 else
                     d_err_d_target_patch_sub_mean = ((eye(length(target_patch_sub_mean))/norm(target_patch_sub_mean)) - (target_patch_sub_mean*target_patch_sub_mean').*(norm(target_patch_sub_mean)).^-3);
@@ -1550,10 +1606,27 @@ for i = 1 : size(pt_host,1)
                     
                 end
             else
+                It0 = It;
                  if switch_jac
                      It = (d_err_d_host_patch * It')';
                  else
                      It = (d_err_d_host_patch * It')';
+                 end
+                 if use_new_res && use_jac_weight
+                     [~,dist_uv] = NormalizeVector(It');
+                     g2 = dist_uv.^2;
+                     % g2 = (max(g2)/0.1) ./ ((max(g2)/0.1) + g2);
+                     g2 = (5) ./ (5 + g2);
+                     if 0
+                         gradWeight2 = g2;
+                     else
+                         gradWeight = g2;
+                         r2_vec_ = rs.^2;
+                         gradWeight2 = gradWeight .* (5 ./ (4 + r2_vec_.*gradWeight));
+                     end
+                     gradWeightMat = diag(sqrt(gradWeight2));
+                     It = (gradWeightMat * It')';
+                     rs = gradWeightMat * rs;
                  end
             end
         else
